@@ -1,0 +1,33 @@
+Bug: Firing issues when the gun is cycling with the eye (several dry shots)
+Bug: Using "Bolt Timer" causes erratic cycling. The higher the value, the more is double fires and skips.
+
+To Do:
+	Add in "special modes"
+	-PSP
+	-NXL
+	-Skill Mode-allows you to shoot 3 or 4 balls then makes you wait atleast 1 second, for snap shooting.
+		
+
+
+=============================================
+
+LED Colors:
+Normal Operation:
+Blue-main power 
+Green-Cycle Activation 
+Red-Low Battery
+Solid Purple-Eye Dropped shot
+Blinking Purple-Eye Bypassed
+Orange-Safety On
+
+Trigger Programming Operations:
+Orange-Trigger Programming Blinks
+
+Button Programming Operations
+Red-Menu Number
+Green-Option Number
+3 Orange Blinks- Option Saved
+3 Blue Blinks-Exiting Button Programming to Normal Operation
+
+
+

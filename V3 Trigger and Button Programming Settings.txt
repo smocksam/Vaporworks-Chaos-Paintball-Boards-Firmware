@@ -1,0 +1,176 @@
+Button Programming Information
+
+First color blinks corresponds to the heading level
+Second color blinks corresponds to the current value of the setting under that heading.
+
+So for example, a blink combo of 4,3 would be "Debounce setting of 9".
+
+
+Heading Blinks
+=============================================================
+1. Dwell	
+2. Eye Sensitivity Adjustment 
+3. Debounce
+4. Mech Debounce						
+5. Presets	
+6. Firing Mode	
+7. Rate Of Fire	
+8. After-Eye	
+9. Eye Mode	
+10.Bolt Delay	
+11.Bolt Min Open	
+12.Aftershot Delay	
+13.Anti-Bolt Stick						
+14.Bolt Time (only used if Eye Mode is set to "Bolt Timer" instead of "Eye Monitored")						
+
+
+Dwell Blinks
+=================================
+1. 2.5ms
+2. 3.0ms
+3. 3.5ms
+...
+15. 18.0ms
+16. 18.5ms
+
+
+Eye Sensitivity Adjustment Blinks
+(only used in reflective eye systems)
+=================================
+1. Auto Eye Adjustment
+2. value of 15
+3. value of 30
+4. value of 45
+...
+15. value of 240
+
+
+Debounce Blinks
+=================================
+1. value of 3
+2. value of 6
+3. value of 9
+...
+9. value of 27
+10. value of 30
+
+Mechanical Debounce Blinks
+=================================
+1. value of 1
+2. value of 2
+3. value of 3
+...
+9. value of 9
+10. value of 10
+16. value of 16
+
+
+Present Blinks (still needs tweaking)
+=================================
+1. Extreme
+2. Fast
+3. Normal
+4. Conservative
+5. Board Defaults
+
+
+Firing Mode Blinks 
+=================================
+1. Semi
+2. Turbo
+3. Autoresponse
+4. Full Auto
+5. PSP Ramping 
+6. NXL Ramping 
+7. Snapshot Trainer
+
+
+ROF Blinks (still needs tweaking) TODO TODO
+=================================
+1. Unlimited
+2. 22bps
+3. 20bps
+4. 19bps
+5. 18bps
+...
+15. 8bps
+16. 6bps
+
+
+After Eye Delay Blinks 
+=================================
+1. Bypass Eyes
+2. 0ms delay
+3. 1ms delay
+4. 2ms delay
+..
+14. 16ms delay
+
+
+Eye Mode Blinks
+=================================
+1. Bolt Timer, SCOPE Off, Drop Shot After Timer
+2. Bolt Timer, SCOPE Off, Fire After Timer
+3. Bolt Timer, SCOPE On, Drop Shot After Timer
+4. Eye Monitored, SCOPE Off, Drop Shot After Timer
+5. Eye Monitored, SCOPE Off, Fire After Timer
+6. Eye Monitored, SCOPE ON, Drop Shot After Timer
+
+
+Bolt Delay Blinks
+(Closed bolt only)
+=================================
+1. 1ms
+2. 2ms
+3. 4ms
+4. 8ms
+..
+16. 30ms delay
+
+
+Bolt Minimum Open Blinks 
+(Closed bolt only)
+=================================
+1. 1ms
+2. 4ms
+3. 8ms
+4. 16ms
+..
+16. 60ms delay
+
+
+After Shot Delay Blinks
+(Closed bolt only)
+=================================
+1. 1ms
+2. 2ms delay
+3. 4ms delay
+4. 6ms delay
+..
+16. 30ms delay
+
+
+Anti-Bolt Stick Added Dwell
+=================================
+1. 0ms added
+2. .5ms added
+3. 1ms added
+4. 1.5ms added
+..
+13. 5ms added
+
+
+Bolt Timer Wait Time
+=================================
+1. 0ms 
+2. 15ms 
+3. 2ms 
+4. 3ms 
+..
+16. 30ms 
+
+
+
+
+
+

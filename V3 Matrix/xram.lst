@@ -1,0 +1,786 @@
+   1               	# 1 "xram.S"
+   2               	# 1 "<built-in>"
+   1               	;; begin xram.S
+   0               	
+   0               	
+   2               	
+   3               	#include <avr/io.h>
+   1               	/* Copyright (c) 2002,2003 Marek Michalkiewicz, Joerg Wunsch
+   2               	   All rights reserved.
+   3               	
+   4               	   Redistribution and use in source and binary forms, with or without
+   5               	   modification, are permitted provided that the following conditions are met:
+   6               	
+   7               	   * Redistributions of source code must retain the above copyright
+   8               	     notice, this list of conditions and the following disclaimer.
+   9               	   * Redistributions in binary form must reproduce the above copyright
+  10               	     notice, this list of conditions and the following disclaimer in
+  11               	     the documentation and/or other materials provided with the
+  12               	     distribution.
+  13               	
+  14               	  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  15               	  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  16               	  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  17               	  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  18               	  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  19               	  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  20               	  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  21               	  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  22               	  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  23               	  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  24               	  POSSIBILITY OF SUCH DAMAGE. */
+  25               	
+  26               	/* $Id: io.h,v 1.10.2.1 2003/10/20 18:58:30 troth Exp $ */
+  27               	
+  28               	/** \defgroup avr_io AVR device-specific IO definitions
+  29               	    \code #include <avr/io.h> \endcode
+  30               	
+  31               	    This header file includes the apropriate IO definitions for the
+  32               	    device that has been specified by the <tt>-mmcu=</tt> compiler
+  33               	    command-line switch.  This is done by diverting to the appropriate
+  34               	    file <tt>&lt;avr/io</tt><em>XXXX</em><tt>.h&gt;</tt> which should
+  35               	    never be included directly.  Some register names common to all
+  36               	    AVR devices are defined directly within <tt>&lt;avr/io.h&gt;</tt>,
+  37               	    but most of the details come from the respective include file.
+  38               	
+  39               	    Note that this file always includes
+  40               	    \code #include <avr/sfr_defs.h> \endcode
+  41               	    See \ref avr_sfr for the details.
+  42               	
+  43               	    Included are definitions of the IO register set and their
+  44               	    respective bit values as specified in the Atmel documentation.
+  45               	    Note that Atmel is not very consistent in its naming conventions,
+  46               	    so even identical functions sometimes get different names on
+  47               	    different devices.
+  48               	
+  49               	    Also included are the specific names useable for interrupt
+  50               	    function definitions as documented
+  51               	    \ref avr_signames "here".
+  52               	
+  53               	    Finally, the following macros are defined:
+  54               	
+  55               	    - \b RAMEND
+  56               	    <br>
+  57               	    A constant describing the last on-chip RAM location.
+  58               	    <br>
+  59               	    - \b XRAMEND
+  60               	    <br>
+  61               	    A constant describing the last possible location in RAM.
+  62               	    This is equal to RAMEND for devices that do not allow for
+  63               	    external RAM.
+  64               	    <br>
+  65               	    - \b E2END
+  66               	    <br>
+  67               	    A constant describing the address of the last EEPROM cell.
+  68               	    <br>
+  69               	    - \b FLASHEND
+  70               	    <br>
+  71               	    A constant describing the last byte address in flash ROM.
+  72               	    <br>
+  73               	    - \b SPM_PAGESIZE
+  74               	    <br>
+  75               	    For devices with bootloader support, the flash pagesize
+  76               	    (in bytes) to be used for the \c SPM instruction. */
+  77               	
+  78               	#ifndef _AVR_IO_H_
+  79               	#define _AVR_IO_H_
+  80               	
+  81               	#include <avr/sfr_defs.h>
+   1               	/* Copyright (c) 2002, Marek Michalkiewicz <marekm@amelek.gda.pl>
+   2               	   All rights reserved.
+   3               	
+   4               	   Redistribution and use in source and binary forms, with or without
+   5               	   modification, are permitted provided that the following conditions are met:
+   6               	
+   7               	   * Redistributions of source code must retain the above copyright
+   8               	     notice, this list of conditions and the following disclaimer.
+   9               	   * Redistributions in binary form must reproduce the above copyright
+  10               	     notice, this list of conditions and the following disclaimer in
+  11               	     the documentation and/or other materials provided with the
+  12               	     distribution.
+  13               	
+  14               	   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  15               	   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  16               	   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  17               	   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  18               	   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  19               	   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  20               	   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  21               	   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  22               	   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  23               	   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  24               	   POSSIBILITY OF SUCH DAMAGE.  */
+  25               	
+  26               	/* avr/sfr_defs.h - macros for accessing AVR special function registers */
+  27               	
+  28               	/* $Id: sfr_defs.h,v 1.10.2.2 2004/04/22 17:41:05 troth Exp $ */
+  29               	
+  30               	#ifndef _AVR_SFR_DEFS_H_
+  31               	#define _AVR_SFR_DEFS_H_ 1
+  32               	
+  33               	/** \defgroup avr_sfr_notes Additional notes from <avr/sfr_defs.h>
+  34               	    \ingroup avr_sfr
+  35               	
+  36               	   The \c <avr/sfr_defs.h> file is included by all of the \c <avr/ioXXXX.h>
+  37               	   files, which use macros defined here to make the special function register
+  38               	   definitions look like C variables or simple constants, depending on the
+  39               	   <tt>_SFR_ASM_COMPAT</tt> define.  Some examples from \c <avr/iom128.h> to
+  40               	   show how to define such macros:
+  41               	
+  42               	\code
+  43               	#define PORTA _SFR_IO8(0x1b)
+  44               	#define TCNT1 _SFR_IO16(0x2c)
+  45               	#define PORTF _SFR_MEM8(0x61)
+  46               	#define TCNT3 _SFR_MEM16(0x88)
+  47               	\endcode
+  48               	
+  49               	   If \c _SFR_ASM_COMPAT is not defined, C programs can use names like
+  50               	   <tt>PORTA</tt> directly in C expressions (also on the left side of
+  51               	   assignment operators) and GCC will do the right thing (use short I/O
+  52               	   instructions if possible).  The \c __SFR_OFFSET definition is not used in
+  53               	   any way in this case.
+  54               	
+  55               	   Define \c _SFR_ASM_COMPAT as 1 to make these names work as simple constants
+  56               	   (addresses of the I/O registers).  This is necessary when included in
+  57               	   preprocessed assembler (*.S) source files, so it is done automatically if
+  58               	   \c __ASSEMBLER__ is defined.  By default, all addresses are defined as if
+  59               	   they were memory addresses (used in \c lds/sts instructions).  To use these
+  60               	   addresses in \c in/out instructions, you must subtract 0x20 from them.
+  61               	
+  62               	   For more backwards compatibility, insert the following at the start of your
+  63               	   old assembler source file:
+  64               	
+  65               	\code
+  66               	#define __SFR_OFFSET 0
+  67               	\endcode
+  68               	
+  69               	   This automatically subtracts 0x20 from I/O space addresses, but it's a
+  70               	   hack, so it is recommended to change your source: wrap such addresses in
+  71               	   macros defined here, as shown below.  After this is done, the
+  72               	   <tt>__SFR_OFFSET</tt> definition is no longer necessary and can be removed.
+  73               	
+  74               	   Real example - this code could be used in a boot loader that is portable
+  75               	   between devices with \c SPMCR at different addresses.
+  76               	
+  77               	\verbatim
+  78               	<avr/iom163.h>: #define SPMCR _SFR_IO8(0x37)
+  79               	<avr/iom128.h>: #define SPMCR _SFR_MEM8(0x68)
+  80               	\endverbatim
+  81               	
+  82               	\code
+  82               	
+  83               	/*
+  84               	 * Registers common to all AVR devices.
+  85               	 */
+  86               	
+  87               	#if __AVR_ARCH__ != 1
+  88               	/*
+  89               	 * AVR architecture 1 has no RAM, thus no stack pointer.
+  90               	 *
+  91               	 * All other archs do have a stack pointer.  Some devices have only
+  92               	 * less than 256 bytes of possible RAM locations (128 Bytes of SRAM
+  93               	 * and no option for external RAM), thus SPH is officially "reserved"
+  94               	 * for them.  We catch this case below after including the
+  95               	 * device-specific ioXXXX.h file, by examining XRAMEND, and
+  96               	 * #undef-ining SP and SPH in that case.
+  97               	 */
+  98               	/* Stack Pointer */
+  99               	#define SP        _SFR_IO16(0x3D)
+ 100               	#define SPL       _SFR_IO8(0x3D)
+ 101               	#define SPH       _SFR_IO8(0x3E)
+ 102               	#endif /* #if __AVR_ARCH__ != 1 */
+ 103               	
+ 104               	/* Status REGister */
+ 105               	#define SREG      _SFR_IO8(0x3F)
+ 106               	
+ 107               	/* Status Register - SREG */
+ 108               	#define    SREG_I       7
+ 109               	#define    SREG_T       6
+ 110               	#define    SREG_H       5
+ 111               	#define    SREG_S       4
+ 112               	#define    SREG_V       3
+ 113               	#define    SREG_N       2
+ 114               	#define    SREG_Z       1
+ 115               	#define    SREG_C       0
+ 116               	
+ 117               	/* Pointer definition */
+ 118               	#if __AVR_ARCH__ != 1
+ 119               	/* avr1 has only the Z pointer */
+ 120               	#define    XL           r26
+ 121               	#define    XH           r27
+ 122               	#define    YL           r28
+ 123               	#define    YH           r29
+ 124               	#endif /* #if __AVR_ARCH__ != 1 */
+ 125               	#define    ZL           r30
+ 126               	#define    ZH           r31
+ 127               	
+ 128               	/*
+ 129               	 * Only few devices come without EEPROM.  In order to assemble the
+ 130               	 * EEPROM library components without defining a specific device, we
+ 131               	 * keep the EEPROM-related definitions here, and catch the devices
+ 132               	 * without EEPROM (E2END == 0) below.  Obviously, the EEPROM library
+ 133               	 * functions will not work for them. ;-)
+ 134               	 */
+ 135               	/* EEPROM Control Register */
+ 136               	#define EECR	_SFR_IO8(0x1C)
+ 137               	
+ 138               	/* EEPROM Data Register */
+ 139               	#define EEDR	_SFR_IO8(0x1D)
+ 140               	
+ 141               	/* EEPROM Address Register */
+ 142               	#define EEAR	_SFR_IO16(0x1E)
+ 143               	#define EEARL	_SFR_IO8(0x1E)
+ 144               	#define EEARH	_SFR_IO8(0x1F)
+ 145               	
+ 146               	/* EEPROM Control Register */
+ 147               	#define    EERIE        3
+ 148               	#define    EEMWE        2
+ 149               	#define    EEWE         1
+ 150               	#define    EERE         0
+ 151               	
+ 152               	#if defined (__AVR_AT94K__)
+ 153               	#  include <avr/ioat94k.h>
+ 154               	#elif defined (__AVR_AT43USB320__)
+ 155               	#  include <avr/io43u32x.h>
+ 156               	#elif defined (__AVR_AT43USB355__)
+ 157               	#  include <avr/io43u35x.h>
+ 158               	#elif defined (__AVR_AT76C711__)
+ 159               	#  include <avr/io76c711.h>
+ 160               	#elif defined (__AVR_AT86RF401__)
+ 161               	#  include <avr/io86r401.h>
+ 162               	#elif defined (__AVR_ATmega128__)
+ 163               	#  include <avr/iom128.h>
+ 164               	#elif defined (__AVR_AT90CAN128__)
+ 165               	#  include <avr/iocan128.h>
+ 166               	#elif defined (__AVR_ATmega64__)
+ 167               	#  include <avr/iom64.h>
+ 168               	#elif defined (__AVR_ATmega103__)
+ 169               	#  include <avr/iom103.h>
+ 170               	#elif defined (__AVR_ATmega32__)
+ 171               	#  include <avr/iom32.h>
+ 172               	#elif defined (__AVR_ATmega323__)
+ 173               	#  include <avr/iom323.h>
+ 174               	#elif defined (__AVR_ATmega16__)
+ 175               	#  include <avr/iom16.h>
+ 176               	#elif defined (__AVR_ATmega161__)
+ 177               	#  include <avr/iom161.h>
+ 178               	#elif defined (__AVR_ATmega162__)
+ 179               	#  include <avr/iom162.h>
+ 180               	#elif defined (__AVR_ATmega163__)
+ 181               	#  include <avr/iom163.h>
+ 182               	#elif defined (__AVR_ATmega168__)
+ 183               	#  include <avr/iom168.h>
+ 184               	#elif defined (__AVR_ATmega169__)
+ 185               	#  include <avr/iom169.h>
+ 186               	#elif defined (__AVR_ATmega8__)
+ 187               	#  include <avr/iom8.h>
+   1               	/* Copyright (c) 2002, Marek Michalkiewicz
+   2               	   All rights reserved.
+   3               	
+   4               	   Redistribution and use in source and binary forms, with or without
+   5               	   modification, are permitted provided that the following conditions are met:
+   6               	
+   7               	   * Redistributions of source code must retain the above copyright
+   8               	     notice, this list of conditions and the following disclaimer.
+   9               	   * Redistributions in binary form must reproduce the above copyright
+  10               	     notice, this list of conditions and the following disclaimer in
+  11               	     the documentation and/or other materials provided with the
+  12               	     distribution.
+  13               	
+  14               	  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  15               	  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  16               	  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  17               	  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  18               	  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  19               	  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  20               	  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  21               	  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  22               	  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  23               	  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  24               	  POSSIBILITY OF SUCH DAMAGE. */
+  25               	
+  26               	/* $Id: iom8.h,v 1.8 2003/02/17 09:57:28 marekm Exp $ */
+  27               	
+  28               	/* avr/iom8.h - definitions for ATmega8 */
+  29               	
+  30               	#ifndef _AVR_IOM8_H_
+  31               	#define _AVR_IOM8_H_ 1
+  32               	
+  33               	/* This file should only be included from <avr/io.h>, never directly. */
+  34               	
+  35               	#ifndef _AVR_IO_H_
+  36               	#  error "Include <avr/io.h> instead of this file."
+  37               	#endif
+  38               	
+  39               	#ifndef _AVR_IOXXX_H_
+  40               	#  define _AVR_IOXXX_H_ "iom8.h"
+  41               	#else
+  42               	#  error "Attempt to include more than one <avr/ioXXX.h> file."
+  43               	#endif 
+  44               	
+  45               	/* I/O registers */
+  46               	
+  47               	/* TWI stands for "Two Wire Interface" or "TWI Was I2C(tm)" */
+  48               	#define TWBR	_SFR_IO8(0x00)
+  49               	#define TWSR	_SFR_IO8(0x01)
+  50               	#define TWAR	_SFR_IO8(0x02)
+  51               	#define TWDR	_SFR_IO8(0x03)
+  52               	
+  53               	/* ADC */
+  54               	#define ADCW	_SFR_IO16(0x04)
+  55               	#ifndef __ASSEMBLER__
+  56               	#define ADC	_SFR_IO16(0x04)
+  57               	#endif
+  58               	#define ADCL	_SFR_IO8(0x04)
+  59               	#define ADCH	_SFR_IO8(0x05)
+  60               	#define ADCSR	_SFR_IO8(0x06)
+  61               	#define ADCSRA	_SFR_IO8(0x06)  /* Changed in 2486H-AVR-09/02 */
+  62               	#define ADMUX	_SFR_IO8(0x07)
+  63               	
+  64               	/* analog comparator */
+  65               	#define ACSR	_SFR_IO8(0x08)
+  66               	
+  67               	/* USART */
+  68               	#define UBRRL	_SFR_IO8(0x09)
+  69               	#define UCSRB	_SFR_IO8(0x0A)
+  70               	#define UCSRA	_SFR_IO8(0x0B)
+  71               	#define UDR	_SFR_IO8(0x0C)
+  72               	
+  73               	/* SPI */
+  74               	#define SPCR	_SFR_IO8(0x0D)
+  75               	#define SPSR	_SFR_IO8(0x0E)
+  76               	#define SPDR	_SFR_IO8(0x0F)
+  77               	
+  78               	/* Port D */
+  79               	#define PIND	_SFR_IO8(0x10)
+  80               	#define DDRD	_SFR_IO8(0x11)
+  81               	#define PORTD	_SFR_IO8(0x12)
+  82               	
+  83               	/* Port C */
+  84               	#define PINC	_SFR_IO8(0x13)
+  85               	#define DDRC	_SFR_IO8(0x14)
+  86               	#define PORTC	_SFR_IO8(0x15)
+  87               	
+  88               	/* Port B */
+  89               	#define PINB	_SFR_IO8(0x16)
+  90               	#define DDRB	_SFR_IO8(0x17)
+  91               	#define PORTB	_SFR_IO8(0x18)
+  92               	
+  93               	/* 0x1C..0x1F EEPROM */
+  94               	
+  95               	#define UCSRC	_SFR_IO8(0x20)
+  96               	#define UBRRH	_SFR_IO8(0x20)
+  97               	
+  98               	#define WDTCR	_SFR_IO8(0x21)
+  99               	#define ASSR	_SFR_IO8(0x22)
+ 100               	
+ 101               	/* Timer 2 */
+ 102               	#define OCR2	_SFR_IO8(0x23)
+ 103               	#define TCNT2	_SFR_IO8(0x24)
+ 104               	#define TCCR2	_SFR_IO8(0x25)
+ 105               	
+ 106               	/* Timer 1 */
+ 107               	#define ICR1	_SFR_IO16(0x26)
+ 108               	#define ICR1L	_SFR_IO8(0x26)
+ 109               	#define ICR1H	_SFR_IO8(0x27)
+ 110               	#define OCR1B	_SFR_IO16(0x28)
+ 111               	#define OCR1BL	_SFR_IO8(0x28)
+ 112               	#define OCR1BH	_SFR_IO8(0x29)
+ 113               	#define OCR1A	_SFR_IO16(0x2A)
+ 114               	#define OCR1AL	_SFR_IO8(0x2A)
+ 115               	#define OCR1AH	_SFR_IO8(0x2B)
+ 116               	#define TCNT1	_SFR_IO16(0x2C)
+ 117               	#define TCNT1L	_SFR_IO8(0x2C)
+ 118               	#define TCNT1H	_SFR_IO8(0x2D)
+ 119               	#define TCCR1B	_SFR_IO8(0x2E)
+ 120               	#define TCCR1A	_SFR_IO8(0x2F)
+ 121               	
+ 122               	#define SFIOR	_SFR_IO8(0x30)
+ 123               	
+ 124               	#define OSCCAL	_SFR_IO8(0x31)
+ 125               	
+ 126               	/* Timer 0 */
+ 127               	#define TCNT0	_SFR_IO8(0x32)
+ 128               	#define TCCR0	_SFR_IO8(0x33)
+ 129               	
+ 130               	#define MCUCSR	_SFR_IO8(0x34)
+ 131               	#define MCUCR	_SFR_IO8(0x35)
+ 132               	
+ 133               	#define TWCR	_SFR_IO8(0x36)
+ 134               	
+ 135               	#define SPMCR	_SFR_IO8(0x37)
+ 136               	
+ 137               	#define TIFR	_SFR_IO8(0x38)
+ 138               	#define TIMSK	_SFR_IO8(0x39)
+ 139               	
+ 140               	#define GIFR	_SFR_IO8(0x3A)
+ 141               	#define GIMSK	_SFR_IO8(0x3B)
+ 142               	#define GICR	_SFR_IO8(0x3B)   /* Changed in 2486H-AVR-09/02 */
+ 143               	
+ 144               	/* 0x3C reserved (OCR0?) */
+ 145               	
+ 146               	/* 0x3D..0x3E SP */
+ 147               	
+ 148               	/* 0x3F SREG */
+ 149               	
+ 150               	/* Interrupt vectors */
+ 151               	
+ 152               	#define SIG_INTERRUPT0		_VECTOR(1)
+ 153               	#define SIG_INTERRUPT1		_VECTOR(2)
+ 154               	#define SIG_OUTPUT_COMPARE2	_VECTOR(3)
+ 155               	#define SIG_OVERFLOW2		_VECTOR(4)
+ 156               	#define SIG_INPUT_CAPTURE1	_VECTOR(5)
+ 157               	#define SIG_OUTPUT_COMPARE1A	_VECTOR(6)
+ 158               	#define SIG_OUTPUT_COMPARE1B	_VECTOR(7)
+ 159               	#define SIG_OVERFLOW1		_VECTOR(8)
+ 160               	#define SIG_OVERFLOW0		_VECTOR(9)
+ 161               	#define SIG_SPI			_VECTOR(10)
+ 162               	#define SIG_UART_RECV		_VECTOR(11)
+ 163               	#define SIG_UART_DATA		_VECTOR(12)
+ 164               	#define SIG_UART_TRANS		_VECTOR(13)
+ 165               	#define SIG_ADC			_VECTOR(14)
+ 166               	#define SIG_EEPROM_READY	_VECTOR(15)
+ 167               	#define SIG_COMPARATOR		_VECTOR(16)
+ 168               	#define SIG_2WIRE_SERIAL	_VECTOR(17)
+ 169               	#define SIG_SPM_READY		_VECTOR(18)
+ 170               	
+ 171               	#define _VECTORS_SIZE 38
+ 172               	
+ 173               	/* Bit numbers */
+ 174               	
+ 175               	/* GIMSK / GICR */
+ 176               	#define INT1	7
+ 177               	#define INT0	6
+ 178               	#define IVSEL	1
+ 179               	#define IVCE	0
+ 180               	
+ 181               	/* GIFR */
+ 182               	#define INTF1	7
+ 183               	#define INTF0	6
+ 184               	
+ 185               	/* TIMSK */
+ 186               	#define OCIE2	7
+ 187               	#define TOIE2	6
+ 188               	#define TICIE1	5
+ 188               	#elif defined (__AVR_ATmega48__)
+ 189               	#  include <avr/iom48.h>
+ 190               	#elif defined (__AVR_ATmega88__)
+ 191               	#  include <avr/iom88.h>
+ 192               	#elif defined (__AVR_ATmega8515__)
+ 193               	#  include <avr/iom8515.h>
+ 194               	#elif defined (__AVR_ATmega8535__)
+ 195               	#  include <avr/iom8535.h>
+ 196               	#elif defined (__AVR_AT90S8535__)
+ 197               	#  include <avr/io8535.h>
+ 198               	#elif defined (__AVR_AT90C8534__)
+ 199               	#  include <avr/io8534.h>
+ 200               	#elif defined (__AVR_AT90S8515__)
+ 201               	#  include <avr/io8515.h>
+ 202               	#elif defined (__AVR_AT90S4434__)
+ 203               	#  include <avr/io4434.h>
+ 204               	#elif defined (__AVR_AT90S4433__)
+ 205               	#  include <avr/io4433.h>
+ 206               	#elif defined (__AVR_AT90S4414__)
+ 207               	#  include <avr/io4414.h>
+ 208               	#elif defined (__AVR_ATtiny22__)
+ 209               	#  include <avr/iotn22.h>
+ 210               	#elif defined (__AVR_ATtiny26__)
+ 211               	#  include <avr/iotn26.h>
+ 212               	#elif defined (__AVR_AT90S2343__)
+ 213               	#  include <avr/io2343.h>
+ 214               	#elif defined (__AVR_AT90S2333__)
+ 215               	#  include <avr/io2333.h>
+ 216               	#elif defined (__AVR_AT90S2323__)
+ 217               	#  include <avr/io2323.h>
+ 218               	#elif defined (__AVR_AT90S2313__)
+ 219               	#  include <avr/io2313.h>
+ 220               	#elif defined (__AVR_ATtiny2313__)
+ 221               	#  include <avr/iotn2313.h>
+ 222               	#elif defined (__AVR_ATtiny13__)
+ 223               	#  include <avr/iotn13.h>
+ 224               	/* avr1: the following only supported for assembler programs */
+ 225               	#elif defined (__AVR_ATtiny28__)
+ 226               	#  include <avr/iotn28.h>
+ 227               	#elif defined (__AVR_AT90S1200__)
+ 228               	#  include <avr/io1200.h>
+ 229               	#elif defined (__AVR_ATtiny15__)
+ 230               	#  include <avr/iotn15.h>
+ 231               	#elif defined (__AVR_ATtiny12__)
+ 232               	#  include <avr/iotn12.h>
+ 233               	#elif defined (__AVR_ATtiny11__)
+ 234               	#  include <avr/iotn11.h>
+ 235               	#else
+ 236               	#  if !defined(__COMPILING_AVR_LIBC__)
+ 237               	#    warning "device type not defined"
+ 238               	#  endif
+ 239               	#endif
+ 240               	
+ 241               	#include <avr/portpins.h>
+   1               	/* Copyright (c) 2003  Theodore A. Roth
+   2               	   All rights reserved.
+   3               	
+   4               	   Redistribution and use in source and binary forms, with or without
+   5               	   modification, are permitted provided that the following conditions are met:
+   6               	
+   7               	   * Redistributions of source code must retain the above copyright
+   8               	     notice, this list of conditions and the following disclaimer.
+   9               	   * Redistributions in binary form must reproduce the above copyright
+  10               	     notice, this list of conditions and the following disclaimer in
+  11               	     the documentation and/or other materials provided with the
+  12               	     distribution.
+  13               	
+  14               	  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  15               	  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  16               	  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  17               	  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  18               	  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  19               	  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  20               	  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  21               	  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  22               	  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  23               	  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  24               	  POSSIBILITY OF SUCH DAMAGE. */
+  25               	
+  26               	/* $Id: portpins.h,v 1.2.2.2 2003/10/20 19:02:36 troth Exp $ */
+  27               	
+  28               	#ifndef _AVR_PORTPINS_H_
+  29               	#define _AVR_PORTPINS_H_ 1
+  30               	
+  31               	/* This file should only be included from <avr/io.h>, never directly. */
+  32               	
+  33               	#ifndef _AVR_IO_H_
+  34               	#  error "Include <avr/io.h> instead of this file."
+  35               	#endif
+  36               	
+  37               	/* Define Generic PORTn, DDn, and PINn values. */
+  38               	
+  39               	/* Port Data Register (generic) */
+  40               	#define    PORT7        7
+  41               	#define    PORT6        6
+  42               	#define    PORT5        5
+  43               	#define    PORT4        4
+  44               	#define    PORT3        3
+  45               	#define    PORT2        2
+  46               	#define    PORT1        1
+  47               	#define    PORT0        0
+  48               	
+  49               	/* Port Data Direction Register (generic) */
+  50               	#define    DD7          7
+  51               	#define    DD6          6
+  52               	#define    DD5          5
+  53               	#define    DD4          4
+  54               	#define    DD3          3
+  55               	#define    DD2          2
+  56               	#define    DD1          1
+  57               	#define    DD0          0
+  58               	
+  59               	/* Port Input Pins (generic) */
+  60               	#define    PIN7         7
+  61               	#define    PIN6         6
+  62               	#define    PIN5         5
+  63               	#define    PIN4         4
+  64               	#define    PIN3         3
+  65               	#define    PIN2         2
+  66               	#define    PIN1         1
+  67               	#define    PIN0         0
+  68               	
+  69               	/* Define PORTxn values for all possible port pins. */
+  70               	
+  71               	/* PORT A */
+  72               	
+  73               	#if defined(PA0)
+  74               	#  define PORTA0 PA0
+  75               	#endif
+  76               	#if defined(PA1)
+  77               	#  define PORTA1 PA1
+  78               	#endif
+  79               	#if defined(PA2)
+  80               	#  define PORTA2 PA2
+  81               	#endif
+  82               	#if defined(PA3)
+  83               	#  define PORTA3 PA3
+  84               	#endif
+  85               	#if defined(PA4)
+  86               	#  define PORTA4 PA4
+  87               	#endif
+  88               	#if defined(PA5)
+  89               	#  define PORTA5 PA5
+  90               	#endif
+  91               	#if defined(PA6)
+  92               	#  define PORTA6 PA6
+  93               	#endif
+  94               	#if defined(PA7)
+  95               	#  define PORTA7 PA7
+  96               	#endif
+  97               	
+  98               	/* PORT B */
+  99               	
+ 100               	#if defined(PB0)
+ 101               	#  define PORTB0 PB0
+ 102               	#endif
+ 103               	#if defined(PB1)
+ 104               	#  define PORTB1 PB1
+ 105               	#endif
+ 106               	#if defined(PB2)
+ 107               	#  define PORTB2 PB2
+ 108               	#endif
+ 109               	#if defined(PB3)
+ 110               	#  define PORTB3 PB3
+ 111               	#endif
+ 112               	#if defined(PB4)
+ 113               	#  define PORTB4 PB4
+ 114               	#endif
+ 115               	#if defined(PB5)
+ 116               	#  define PORTB5 PB5
+ 117               	#endif
+ 118               	#if defined(PB6)
+ 119               	#  define PORTB6 PB6
+ 120               	#endif
+ 121               	#if defined(PB7)
+ 122               	#  define PORTB7 PB7
+ 123               	#endif
+ 124               	
+ 125               	/* PORT C */
+ 126               	
+ 127               	#if defined(PC0)
+ 128               	#  define PORTC0 PC0
+ 129               	#endif
+ 130               	#if defined(PC1)
+ 131               	#  define PORTC1 PC1
+ 132               	#endif
+ 133               	#if defined(PC2)
+ 134               	#  define PORTC2 PC2
+ 135               	#endif
+ 136               	#if defined(PC3)
+ 137               	#  define PORTC3 PC3
+ 138               	#endif
+ 139               	#if defined(PC4)
+ 140               	#  define PORTC4 PC4
+ 141               	#endif
+ 142               	#if defined(PC5)
+ 143               	#  define PORTC5 PC5
+ 144               	#endif
+ 145               	#if defined(PC6)
+ 146               	#  define PORTC6 PC6
+ 147               	#endif
+ 148               	#if defined(PC7)
+ 149               	#  define PORTC7 PC7
+ 150               	#endif
+ 151               	
+ 152               	/* PORT D */
+ 153               	
+ 154               	#if defined(PD0)
+ 155               	#  define PORTD0 PD0
+ 156               	#endif
+ 157               	#if defined(PD1)
+ 158               	#  define PORTD1 PD1
+ 159               	#endif
+ 160               	#if defined(PD2)
+ 161               	#  define PORTD2 PD2
+ 162               	#endif
+ 163               	#if defined(PD3)
+ 164               	#  define PORTD3 PD3
+ 165               	#endif
+ 166               	#if defined(PD4)
+ 167               	#  define PORTD4 PD4
+ 168               	#endif
+ 169               	#if defined(PD5)
+ 170               	#  define PORTD5 PD5
+ 171               	#endif
+ 172               	#if defined(PD6)
+ 173               	#  define PORTD6 PD6
+ 174               	#endif
+ 175               	#if defined(PD7)
+ 176               	#  define PORTD7 PD7
+ 177               	#endif
+ 178               	
+ 179               	/* PORT E */
+ 180               	
+ 181               	#if defined(PE0)
+ 182               	#  define PORTE0 PE0
+ 183               	#endif
+ 184               	#if defined(PE1)
+ 185               	#  define PORTE1 PE1
+ 186               	#endif
+ 187               	#if defined(PE2)
+ 188               	#  define PORTE2 PE2
+ 189               	#endif
+ 190               	#if defined(PE3)
+ 191               	#  define PORTE3 PE3
+ 192               	#endif
+ 193               	#if defined(PE4)
+ 194               	#  define PORTE4 PE4
+ 195               	#endif
+ 196               	#if defined(PE5)
+ 197               	#  define PORTE5 PE5
+ 198               	#endif
+ 199               	#if defined(PE6)
+ 200               	#  define PORTE6 PE6
+ 201               	#endif
+ 202               	#if defined(PE7)
+ 203               	#  define PORTE7 PE7
+ 204               	#endif
+ 205               	
+ 206               	/* PORT F */
+ 207               	
+ 208               	#if defined(PF0)
+ 209               	#  define PORTF0 PF0
+ 210               	#endif
+ 211               	#if defined(PF1)
+ 212               	#  define PORTF1 PF1
+ 213               	#endif
+ 214               	#if defined(PF2)
+ 215               	#  define PORTF2 PF2
+ 216               	#endif
+ 217               	#if defined(PF3)
+ 218               	#  define PORTF3 PF3
+ 219               	#endif
+ 220               	#if defined(PF4)
+ 221               	#  define PORTF4 PF4
+ 222               	#endif
+ 223               	#if defined(PF5)
+ 224               	#  define PORTF5 PF5
+ 225               	#endif
+ 226               	#if defined(PF6)
+ 227               	#  define PORTF6 PF6
+ 228               	#endif
+ 229               	#if defined(PF7)
+ 230               	#  define PORTF7 PF7
+ 231               	#endif
+ 232               	
+ 233               	/* PORT G */
+ 234               	
+ 235               	#if defined(PG0)
+ 236               	#  define PORTG0 PG0
+ 237               	#endif
+ 238               	#if defined(PG1)
+ 239               	#  define PORTG1 PG1
+ 240               	#endif
+ 241               	#if defined(PG2)
+ 242               	#  define PORTG2 PG2
+ 242               	
+   4               	
+   5               		.section .init1,"ax",@progbits
+   6:xram.S        **** 	ser	r16
+   7:xram.S        **** 	out 0x17,r16
+   8:xram.S        **** 	clr r16        ;; for freestyle
+   9               		;;ldi r16,#0x02  ;; for xonik
+  10:xram.S        **** 	out 0x18,r16
+  11               		
+  12               	
+  13               	;; end xram.S
+DEFINED SYMBOLS
+                            *ABS*:00000000 xram.S
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/io.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/portpins.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/io.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/iom8.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/io.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/sfr_defs.h
+                            *ABS*:00000000 C:/WinAVR/bin/../lib/gcc/avr/3.4.1/../../../../avr/include/avr/io.h
+                            *ABS*:00000000 xram.S
+                            *ABS*:00000000 <command line>
+                            *ABS*:00000000 <built-in>
+                            *ABS*:00000000 xram.S
+
+NO UNDEFINED SYMBOLS
